@@ -7,7 +7,7 @@ Prerequisites:
 -scipy,  
 -h5py  
 
-All results are saved in h5py files.
+All results are saved in h5py files. Refer to the Jupyter notebook <code>example.ipynb</code> for a practical example.
 
 ## Tensor network logic
 
