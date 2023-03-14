@@ -3,9 +3,9 @@
 This is the code implementing the shallow shadows protocol as detailed in [arXiv:2209.12924](https://arxiv.org/abs/2209.12924). 
 
 Prerequisites:
--numpy,
--scipy,
--h5py
+-numpy,  
+-scipy,  
+-h5py  
 
 All results are saved in h5py files.
 
