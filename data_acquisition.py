@@ -21,14 +21,15 @@ import h5py
 
 
 def generateShadow(state, depth, number_of_snapshots, output_file_name, clifford=True, verbose=False):
+    size=state.getSize()
+    bond_dimension=max(1,2**(depth-1))
     output_file=h5py.File(output_file_name, 'w')
     output_file.create_dataset('snapshots', (number_of_snapshots, size, bond_dimension, bond_dimension, 4), dtype=complex)
 
 
-    bond_dimension=max(1,2**(depth-1))
-    size=state.getSize()
 
-    for k in range(number_of_shadows):
+
+    for k in range(number_of_snapshots):
 
         circuit=randomCircuitMPO(size,depth, clifford) #construct an MPO corresponding to a random circuit of the required size and depth
 
@@ -46,7 +47,7 @@ def generateShadow(state, depth, number_of_snapshots, output_file_name, clifford
                 for l in range(bond_dimension):
                     local_tensors[j][l]=transpose(conj(circuit.getMatrix(i,j,l)))[:,measurement_result[i]] 
 
-           classical_snapshot_tensors.append(local_tensors)
+            classical_snapshot_tensors.append(local_tensors)
 
         output_file["snapshots"][k]=classical_snapshot_tensors
 
