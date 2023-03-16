@@ -6,6 +6,7 @@ Prerequisites:
 -numpy  
 -scipy  
 -h5py  
+-qiskit 
 
 All results are saved in h5py files. Refer to the Jupyter notebook <code>example.ipynb</code> for a practical example.
 
