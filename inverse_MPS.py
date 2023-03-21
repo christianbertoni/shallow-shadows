@@ -29,10 +29,12 @@ def constructInverse(size, depth, bond_dimension, target_accuracy, output_file_n
 	if(len(M_ansatz)==0):
 		M_ansatz=MPS(tensors=[random((bond_dimension,bond_dimension,2)) for k in range(size)])
 
-	M_inverse=invert(M,M_ansatz,target_accuracy, regularize, verbose, brute_force_cost)
+	[M_inverse, cost]=invert(M,M_ansatz,target_accuracy, regularize, verbose, brute_force_cost)
 
 	output_file=h5py.File(output_file_name, 'w')
 	output_file.create_dataset('inverse_MPS', shape=(size,bond_dimension, bond_dimension,2), data=M_inverse.getTensors())
+	output_file.create_dataset('cost', data=cost)
+
 	output_file.close()
 
 
@@ -57,13 +59,13 @@ def invert(M,M_ansatz, target_accuracy, regularize, verbose, brute_force_cost):
 			
 
 			if(verbose):
-				print('\r'+"                                           ", end='')
+				print('\r'+" "*100, end='')
 				print('\r'+"Distance from inverse: "+str(costFunction(M,M_inverse,0,brute_force_cost)), end='')
 				
                 
 	if(verbose):
 				print('\r'+"Distance from inverse: "+str(costFunction(M,M_inverse,0,brute_force_cost)), end='')	
-	return M_inverse
+	return [M_inverse, cost]
 
 ####### MEASUREMENT MAP COMPUTATION
 
