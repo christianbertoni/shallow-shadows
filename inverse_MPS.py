@@ -1,5 +1,4 @@
 import numpy as np 
-from numpy import array, kron, trace, transpose, identity, zeros, shape, reshape, empty
 from numpy.random import random
 from scipy.linalg import pinv, lstsq
 import h5py
@@ -15,7 +14,7 @@ from tensor_networks import MPS
 #target_accuracy: distance between approximate inverse and actual inverse required
 #output_file_name: name of the file where the inverse will be saved
 
-#M_ansatz: ansatz for the inverse, if empty, a random ansatz is chosen.
+#M_ansatz: ansatz for the inverse, if np.empty, a random ansatz is chosen.
 #regularize: if True, the regularization guiding the optimization towards a translationally invariant inverse is applied
 #verbose: if True, the cost function is displayed at every step
 #brute_force_cost: if True, the cost function is computed inefficiently by summing all of the 2^n terms (m(x)v(x)-1)^2 
@@ -47,7 +46,7 @@ def invert(M,M_ansatz, target_accuracy, regularize, verbose, brute_force_cost):
 	while(cost>target_accuracy):
 		for site in range(M.getSize()):
 
-			new_tensor=empty((2,M_inverse.getBondDimension(),M_inverse.getBondDimension()))
+			new_tensor=np.empty((2,M_inverse.getBondDimension(),M_inverse.getBondDimension()))
 			for index in range(2):
 				dist=costFunction(M,M_inverse,0,brute_force_cost)
 				regularization_strength=int(regularize)*min(dist,1)
@@ -55,7 +54,7 @@ def invert(M,M_ansatz, target_accuracy, regularize, verbose, brute_force_cost):
 				
 				new_tensor[index]=optimizeDirection(M,M_inverse,site,index, regularization_strength)
 
-			M_inverse.setTensor(site, transpose([x for x in new_tensor]))
+			M_inverse.setTensor(site, np.transpose([x for x in new_tensor]))
 			
 
 			if(verbose):
@@ -72,20 +71,20 @@ def invert(M,M_ansatz, target_accuracy, regularize, verbose, brute_force_cost):
 ##this function computes the MPS representation of the measurement channel M, i.e. the MPS that we need to invert
 
 def measurementMap(size, depth):
-    T_s=transpose(array([[1,0,0,0],[0, 3/15,3/15,3/15],[0, 3/15,3/15,3/15],[0, 9/15,9/15,9/15]]))
+    T_s=np.transpose(np.array([[1,0,0,0],[0, 3/15,3/15,3/15],[0, 3/15,3/15,3/15],[0, 9/15,9/15,9/15]]))
 
-    F=array(transpose([1,1/3,1/3,1/9]))
+    F=np.array(np.transpose([1,1/3,1/3,1/9]))
 
     T=T_s
 
     for k in range(1,depth):
-        T=kron(T,identity(2))@kron(identity(2**(k)),T_s)
+        T=np.kron(T,np.identity(2))@np.kron(np.identity(2**(k)),T_s)
 
-    T=T@transpose(kron(identity(2**(depth-1)),F))
+    T=T@np.transpose(np.kron(np.identity(2**(depth-1)),F))
 
-    local_matrices=kron([1,0,0,0], identity(2**(depth-1)))@T, kron([0,1,0,0],identity(2**(depth-1)))@T
+    local_matrices=np.kron([1,0,0,0], np.identity(2**(depth-1)))@T, np.kron([0,1,0,0],np.identity(2**(depth-1)))@T
 
-    return MPS(tensors=[transpose(local_matrices) for k in range(size)])
+    return MPS(tensors=[np.transpose(local_matrices) for k in range(size)])
 
 
 
@@ -105,8 +104,8 @@ def bruteForceCost(M,M_inverse):
 		for j in range(1,size):
 			m=m@M.bondMatrix(j,bit_string_k[j])
 			m_inverse=m_inverse@M_inverse.bondMatrix(j,bit_string_k[j])
-		cost+=(trace(m)*trace(m_inverse)-1)**2
-		clist.append((trace(m)*trace(m_inverse)-1)**2)
+		cost+=(np.trace(m)*np.trace(m_inverse)-1)**2
+		clist.append((np.trace(m)*np.trace(m_inverse)-1)**2)
 	return sum(x**2 for x in clist)
 
 ### efficient computation of the cost function.
@@ -118,15 +117,15 @@ def costFunction(M, M_inverse, regularization_strength=0, brute_force=False):
 	linear_part=np.identity(M.getBondDimension()*M_inverse.getBondDimension())
 	quadratic_part=np.identity(len(linear_part)**2)
 	for site in range(size):
-		quadratic_part=quadratic_part@sum(kron(kronSquare(M.bondMatrix(site,index)), kronSquare(M_inverse.bondMatrix(site,index))) for index in range(2))   
-		linear_part=linear_part@sum(kron(M.bondMatrix(site,index), M_inverse.bondMatrix(site,index)) for index in range(2))
+		quadratic_part=quadratic_part@sum(np.kron(kronSquare(M.bondMatrix(site,index)), kronSquare(M_inverse.bondMatrix(site,index))) for index in range(2))   
+		linear_part=linear_part@sum(np.kron(M.bondMatrix(site,index), M_inverse.bondMatrix(site,index)) for index in range(2))
 	
-	return trace(quadratic_part)-2*trace(linear_part)+2**size+regularization_strength*translationalVariance(M_inverse)
+	return np.trace(quadratic_part)-2*np.trace(linear_part)+2**size+regularization_strength*translationalVariance(M_inverse)
 
 ### additional cost function measuring how far the MPS is from translational invariance, used for regularization 
 
 def translationalVariance(M_inverse):
-	average_tensors=[zeros((M_inverse.getBondDimension(),M_inverse.getBondDimension())),zeros((M_inverse.getBondDimension(),M_inverse.getBondDimension())) ]
+	average_tensors=[np.zeros((M_inverse.getBondDimension(),M_inverse.getBondDimension())),np.zeros((M_inverse.getBondDimension(),M_inverse.getBondDimension())) ]
 	for index in range(2):
 		for site in range(M_inverse.getSize()):
 			average_tensors[index]+=M_inverse.bondMatrix(site,index)/M_inverse.getSize()
@@ -134,7 +133,7 @@ def translationalVariance(M_inverse):
 	for site in range(M_inverse.getSize()):
 		for index in range(2):
 			V=M_inverse.bondMatrix(site,index)-average_tensors[index]
-			r+=trace(V@transpose(V))
+			r+=np.trace(V@np.transpose(V))
 	return r
 
 
@@ -159,32 +158,32 @@ def quadraticForm(M, M_inverse, site, index, regularization_strength=0):
 	bond_dimension=M_inverse.getBondDimension()
 	quadratic_transfer_matrix=np.identity((M.getBondDimension()*M_inverse.getBondDimension())**2)
 	linear_transfer_matrix=np.identity(M.getBondDimension()*M_inverse.getBondDimension())
-	quadratic_part=zeros((bond_dimension**2, bond_dimension**2))
-	linear_part=zeros(bond_dimension**2)
+	quadratic_part=np.zeros((bond_dimension**2, bond_dimension**2))
+	linear_part=np.zeros(bond_dimension**2)
 
 	for k in range(site):
-		quadratic_transfer_matrix=quadratic_transfer_matrix@sum(kron(kronSquare(M.bondMatrix(k,s)), kronSquare(M_inverse.bondMatrix(k,s))) for s in range(2))   
-		linear_transfer_matrix=linear_transfer_matrix@sum(kron(M.bondMatrix(k,s), M_inverse.bondMatrix(k,s)) for s in range(2))
+		quadratic_transfer_matrix=quadratic_transfer_matrix@sum(np.kron(kronSquare(M.bondMatrix(k,s)), kronSquare(M_inverse.bondMatrix(k,s))) for s in range(2))   
+		linear_transfer_matrix=linear_transfer_matrix@sum(np.kron(M.bondMatrix(k,s), M_inverse.bondMatrix(k,s)) for s in range(2))
 	for k in range(size-1,site,-1):
-		quadratic_transfer_matrix=sum(kron(kronSquare(M.bondMatrix(k,s)), kronSquare(M_inverse.bondMatrix(k,s))) for s in range(2))@quadratic_transfer_matrix 
-		linear_transfer_matrix=sum(kron(M.bondMatrix(k,s), M_inverse.bondMatrix(k,s)) for s in range(2))@linear_transfer_matrix
+		quadratic_transfer_matrix=sum(np.kron(kronSquare(M.bondMatrix(k,s)), kronSquare(M_inverse.bondMatrix(k,s))) for s in range(2))@quadratic_transfer_matrix 
+		linear_transfer_matrix=sum(np.kron(M.bondMatrix(k,s), M_inverse.bondMatrix(k,s)) for s in range(2))@linear_transfer_matrix
 
 
 	for i in range(bond_dimension):
 		for j in range(bond_dimension):
 			for k in range(bond_dimension):
 				for l in range(bond_dimension):
-					quadratic_part[j+bond_dimension*i,l+bond_dimension*k]= trace(quadratic_transfer_matrix@kron(kronSquare(M.bondMatrix(site,index)), kron(matrixBasis(i,j,bond_dimension),matrixBasis(k,l,bond_dimension))))
+					quadratic_part[j+bond_dimension*i,l+bond_dimension*k]= np.trace(quadratic_transfer_matrix@np.kron(kronSquare(M.bondMatrix(site,index)), np.kron(matrixBasis(i,j,bond_dimension),matrixBasis(k,l,bond_dimension))))
 
 	for i in range(bond_dimension):
 		for j in range(bond_dimension):
-			linear_part[j+bond_dimension*i]=-2*trace(linear_transfer_matrix@kron(M.bondMatrix(site,index),matrixBasis(i,j,bond_dimension)))
+			linear_part[j+bond_dimension*i]=-2*np.trace(linear_transfer_matrix@np.kron(M.bondMatrix(site,index),matrixBasis(i,j,bond_dimension)))
 
 	##regularization part
 
 	if(size>1):
-		reg_matrix=regularization_strength*identity(bond_dimension**2)*(1-1/size)**2
-		reg_vector=-regularization_strength*reshape(sum(M_inverse.bondMatrix(s,index) for s in range(size) if s!=site), bond_dimension**2)*2*(1-1/size)*1/size
+		reg_matrix=regularization_strength*np.identity(bond_dimension**2)*(1-1/size)**2
+		reg_vector=-regularization_strength*np.reshape(sum(M_inverse.bondMatrix(s,index) for s in range(size) if s!=site), bond_dimension**2)*2*(1-1/size)*1/size
 
 		return [quadratic_part+reg_matrix,linear_part+reg_vector]
 	else: 
@@ -196,11 +195,11 @@ def quadraticForm(M, M_inverse, site, index, regularization_strength=0):
 
 
 def kronSquare(matrix):
-	return kron(matrix,np.conj(matrix))
+	return np.kron(matrix,np.conj(matrix))
 
 
 def matrixBasis(i,j,n):
-    m=zeros((n,n))
+    m=np.zeros((n,n))
     m[i,j]=1.
     return m
 

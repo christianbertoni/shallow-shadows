@@ -1,7 +1,7 @@
 from tensor_networks import *
 from inverse_MPS import measurementMap
 import h5py
-from numpy import mean, sqrt, diag, empty
+import numpy as np
 import sys
 from copy import deepcopy
 
@@ -85,7 +85,7 @@ def sparseEstimation(shadow_file_name, depth, paulis, coefficients, output_file_
         for k in range(0, n_qubits, 2):
             if (pauli[k]+pauli[k+1] > 0):
                 non_zero_pairs[-1].append(k//2)
-                paired_paulis[-1].append(kron(pauli_list[pauli[k]],
+                paired_paulis[-1].append(np.kron(pauli_list[pauli[k]],
                                          pauli_list[pauli[k+1]]))
     shadow_file = h5py.File(shadow_file_name, 'r')
     output_file = h5py.File(output_file_name, 'w')
@@ -123,20 +123,20 @@ def sparseEstimation(shadow_file_name, depth, paulis, coefficients, output_file_
 
 def MinverseMPO(M_inverse):
     size = len(M_inverse)
-    bond_dimension = shape(M_inverse)[1]
+    bond_dimension = np.shape(M_inverse)[1]
     swap = [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]]
-    U = (array([[1, 0, 0, 1], [0, 1, 1, 0], [
-         0, -1j, 1j, 0], [1, 0, 0, -1]])/sqrt(2))
+    U = (np.array([[1, 0, 0, 1], [0, 1, 1, 0], [
+         0, -1j, 1j, 0], [1, 0, 0, -1]])/np.sqrt(2))
 
-    idswap = kron(identity(2), kron(swap, identity(2)))
-    basis_change = idswap@kron(U, U)@idswap
+    idswap = np.kron(np.identity(2), np.kron(swap, np.identity(2)))
+    basis_change = idswap@np.kron(U, U)@idswap
     tensors = []
     for i in range(size):
-        local_matrices = empty(
+        local_matrices = np.empty(
             (bond_dimension, bond_dimension, 16, 16), dtype=complex)
         for k in range(bond_dimension):
             for j in range(bond_dimension):
-                local_matrices[k][j] = conj(transpose(
-                    basis_change))@diag([M_inverse[i][k][j][min(x, 1)] for x in range(16)])@basis_change
+                local_matrices[k][j] = np.conj(np.transpose(
+                    basis_change))@np.diag([M_inverse[i][k][j][min(x, 1)] for x in range(16)])@basis_change
         tensors.append(local_matrices)
     return MPO(tensors=tensors)

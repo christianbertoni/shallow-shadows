@@ -1,7 +1,7 @@
 from tensor_networks import *
 from scipy.stats import unitary_group
 from qiskit.quantum_info import random_clifford
-from numpy import array, transpose, kron, identity, shape, empty
+import numpy as np
 from numpy.random import random
 import sys
 import h5py
@@ -41,12 +41,12 @@ def generateShadow(state, depth, number_of_snapshots, output_file_name, clifford
 
         for i in range(size):
 
-            local_tensors = empty(
+            local_tensors = np.empty(
                 (bond_dimension, bond_dimension, 4), dtype=complex)
 
             for j in range(bond_dimension):
                 for l in range(bond_dimension):
-                    local_tensors[j][l] = transpose(conj(circuit.getMatrix(i, j, l)))[
+                    local_tensors[j][l] = np.transpose(np.conj(circuit.getMatrix(i, j, l)))[
                         :, measurement_result[i]]
 
             classical_snapshot_tensors.append(local_tensors)
@@ -76,40 +76,40 @@ def randomCircuitMPO(size, depth, clifford=False):
                 U1 = random_clifford(1).to_matrix()
                 U2 = random_clifford(1).to_matrix()
             else:
-                U1 = array(unitary_group.rvs(2))
-                U2 = array(unitary_group.rvs(2))
-            MPO_tensors.append([[kron(U1, U2)]])
+                U1 = np.array(unitary_group.rvs(2))
+                U2 = np.array(unitary_group.rvs(2))
+            MPO_tensors.append([[np.kron(U1, U2)]])
 
     elif (depth == 1):
         for i in range(size):
             if (clifford):
                 U = random_clifford(2).to_matrix()
             else:
-                U = array(unitary_group.rvs(4))
+                U = np.array(unitary_group.rvs(4))
             MPO_tensors.append([[U]])
 
     else:
         for i in range(size):
-            MPO_tensor = empty(
+            MPO_tensor = np.empty(
                 (bond_dimension, bond_dimension, 4, 4), dtype=complex)
 
             if (clifford):
                 unitary_list = [random_clifford(
                     2).to_matrix() for k in range(depth)]
             else:
-                unitary_list = [array(unitary_group.rvs(4))
+                unitary_list = [np.array(unitary_group.rvs(4))
                                 for k in range(depth)]
 
             for j in range(bond_dimension):
                 for k in range(bond_dimension):
                     j_bin = int2list(j, depth-1)
                     k_bin = int2list(k, depth-1)
-                    T = unitary_list[0]@transpose(
-                        kron(identity(2)[j_bin[0]], identity(2)))
+                    T = unitary_list[0]@np.transpose(
+                        np.kron(np.identity(2)[j_bin[0]], np.identity(2)))
                     for r in range(1, depth-1):
-                        T = T @ kron(identity(2), identity(2)[k_bin[r-1]])@unitary_list[r]@transpose(
-                            kron(identity(2)[j_bin[r]], identity(2)))
-                    MPO_tensor[j, k] = T @ kron(identity(2), identity(2)
+                        T = T @ np.kron(np.identity(2), np.identity(2)[k_bin[r-1]])@unitary_list[r]@np.transpose(
+                            np.kron(np.identity(2)[j_bin[r]], np.identity(2)))
+                    MPO_tensor[j, k] = T @ np.kron(np.identity(2), np.identity(2)
                                                 [k_bin[depth-2]])@unitary_list[depth-1]
             MPO_tensors.append(MPO_tensor)
 
@@ -122,18 +122,18 @@ def sampleFromMPS(M):
     bits = []
     normalization = 1.
     for site in range(M.getSize()):
-        transfer_matrix = identity(M.getBondDimension()**2)
+        transfer_matrix = np.identity(M.getBondDimension()**2)
         for k in range(site):
-            transfer_matrix = transfer_matrix@kron(
-                M.bondMatrix(k, bits[k]), conj(M.bondMatrix(k, bits[k])))
+            transfer_matrix = transfer_matrix@np.kron(
+                M.bondMatrix(k, bits[k]), np.conj(M.bondMatrix(k, bits[k])))
         for k in range(M.getSize()-1, site, -1):
-            transfer_matrix = sum(kron(M.bondMatrix(k, b), conj(M.bondMatrix(
+            transfer_matrix = sum(np.kron(M.bondMatrix(k, b), np.conj(M.bondMatrix(
                 k, b))) for b in range(M.getPhysicalDimension()))@transfer_matrix
 
         probabilities = []
         for bit in range(M.getPhysicalDimension()):
-            probabilities.append(abs(trace(
-                transfer_matrix@kron(M.bondMatrix(site, bit), conj(M.bondMatrix(site, bit))))/normalization))
+            probabilities.append(abs(np.trace(
+                transfer_matrix@np.kron(M.bondMatrix(site, bit), np.conj(M.bondMatrix(site, bit))))/normalization))
         chosen_bit = sampleFromDistribution(probabilities)
         normalization *= probabilities[chosen_bit]
         bits.append(chosen_bit)

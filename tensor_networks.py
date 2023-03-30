@@ -1,18 +1,17 @@
-from numpy import zeros, base_repr, transpose, conj, identity, trace, array, kron, shape, empty
-
+import numpy as np
 
 # TENSOR NETWORK IMPLEMENTATION
 
 # MPO CLASS
 
-# an MPO is stored as a list of tensors, the attribute tensors has a shape (size, bond_dimension, bond_dimension, physical_dimension, physical_dimension)
+# an MPO is stored as a list of tensors, the attribute tensors has a np.shape (size, bond_dimension, bond_dimension, physical_dimension, physical_dimension)
 # note that this code only supports MPOs where each tensor has the same bond dimension
 # we call self.__tensors[s][i][j][:][:] the matrix in the site s at indices i,j, and self.__tensors[s][:][:][i][j] the bond matrix at site s and indices i,j
 
-# an MPO is initialized by either giving the tensors, as in MPO(tensors= T), where T is of the shape described above,
-# or by giving a size, bond dimension and physical dimension, in which case the tensors are filled with zeros.
+# an MPO is initialized by either giving the tensors, as in MPO(tensors= T), where T is of the np.shape described above,
+# or by giving a size, bond dimension and physical dimension, in which case the tensors are filled with np.zeros.
 
-# MPS are the same, the tensors are given by a list of shape (size, bond_dimension, bond_dimension, physical_dimension),
+# MPS are the same, the tensors are given by a list of np.shape (size, bond_dimension, bond_dimension, physical_dimension),
 # self.__tensors[s][i][j][:] is called the vector at site s and indices i,j
 
 class MPO:
@@ -25,7 +24,7 @@ class MPO:
             self.__bond_dimension = bond_dimension
             self.__physical_dimension = physical_dimension
 
-            self.__tensors = zeros((self.__size, self.__bond_dimension, self.__bond_dimension,
+            self.__tensors = np.zeros((self.__size, self.__bond_dimension, self.__bond_dimension,
                                    self.__physical_dimension, self.__physical_dimension))
 
         else:
@@ -35,8 +34,8 @@ class MPO:
 
             self.__tensors = tensors[:]
             self.__size = len(tensors)
-            self.__bond_dimension = shape(tensors[0])[0]
-            self.__physical_dimension = shape(tensors[0][0][0])[0]
+            self.__bond_dimension = np.shape(tensors[0])[0]
+            self.__physical_dimension = np.shape(tensors[0][0][0])[0]
 
     def getMatrix(self, site, i, j):
         return self.__tensors[site][i][j]
@@ -45,15 +44,15 @@ class MPO:
         return self.__tensors
 
     def setMatrix(self, site, i, j, matrix):
-        if (shape(matrix) != (self.__physical_dimension, self.__physical_dimension)):
+        if (np.shape(matrix) != (self.__physical_dimension, self.__physical_dimension)):
             raise ValueError(
-                "The shape of this matrix is incompatible with the physical dimension")
+                "The np.shape of this matrix is incompatible with the physical dimension")
 
         self.__tensors[site][i][j] = matrix
 
     def setTensors(self, tensors):
-        self.__bond_dimension = shape(tensors[0])[0]
-        self.__physical_dimension = shape(tensors[0][0])[0]
+        self.__bond_dimension = np.shape(tensors[0])[0]
+        self.__physical_dimension = np.shape(tensors[0][0])[0]
         self.__size = len(tensors)
         self.__tensors = tensors
 
@@ -70,9 +69,9 @@ class MPO:
     def matrixElement(self, x, y):
         x_bin = int2list(x, self.__size, self.__physical_dimension)
         y_bin = int2list(y, self.__size, self.__physical_dimension)
-        transfer_matrix = identity(self.__bond_dimension)
+        transfer_matrix = np.identity(self.__bond_dimension)
         for i in range(self.__size):
-            matrix = zeros(
+            matrix = np.zeros(
                 (self.__bond_dimension, self.__bond_dimension), dtype=complex)
             for a in range(self.__bond_dimension):
                 for b in range(self.__bond_dimension):
@@ -80,10 +79,10 @@ class MPO:
 
             transfer_matrix = transfer_matrix@matrix
 
-        return trace(transfer_matrix)
+        return np.trace(transfer_matrix)
 
     def bondMatrix(self, site, index1, index2):
-        return array([array([self.__tensors[site][x][y][index1, index2] for x in range(self.__bond_dimension)]) for y in range(self.__bond_dimension)])
+        return np.array([np.array([self.__tensors[site][x][y][index1, index2] for x in range(self.__bond_dimension)]) for y in range(self.__bond_dimension)])
 
 
 class MPS:
@@ -96,7 +95,7 @@ class MPS:
             self.__bond_dimension = bond_dimension
             self.__physical_dimension = physical_dimension
 
-            self.__tensors = zeros((self.__size, self.__bond_dimension,
+            self.__tensors = np.zeros((self.__size, self.__bond_dimension,
                                    self.__bond_dimension, self.__physical_dimension), dtype=complex)
 
         else:
@@ -106,8 +105,8 @@ class MPS:
 
             self.__tensors = tensors[:]
             self.__size = len(tensors)
-            self.__bond_dimension = shape(tensors[0])[0]
-            self.__physical_dimension = shape(tensors[0][0][0])[0]
+            self.__bond_dimension = np.shape(tensors[0])[0]
+            self.__physical_dimension = np.shape(tensors[0][0][0])[0]
 
     def getVector(self, site, i, j):
         return self.__tensors[site][i][j]
@@ -116,19 +115,19 @@ class MPS:
         return self.__tensors
 
     def setVector(self, site, i, j, vector):
-        if (shape(vector) != (self.__physical_dimension,)):
+        if (np.shape(vector) != (self.__physical_dimension,)):
             raise ValueError(
-                "The shape of this vector is incompatible with the physical dimension")
+                "The np.shape of this vector is incompatible with the physical dimension")
         self.__tensors[site][i][j] = vector
 
     def setTensor(self, site, tensor):
-        if (shape(tensor) != (self.__bond_dimension, self.__bond_dimension, self.__physical_dimension)):
-            raise ValueError("Wrong tensor shape")
+        if (np.shape(tensor) != (self.__bond_dimension, self.__bond_dimension, self.__physical_dimension)):
+            raise ValueError("Wrong tensor np.shape")
         self.__tensors[site] = tensor[:]
 
     def setTensors(self, tensors):
-        self.__bond_dimension = shape(tensors[0])[0]
-        self.__physical_dimension = shape(tensors[0][0])[0]
+        self.__bond_dimension = np.shape(tensors[0])[0]
+        self.__physical_dimension = np.shape(tensors[0][0])[0]
         self.__size = len(tensors)
         self.__tensors = tensors[:]
 
@@ -149,28 +148,28 @@ class MPS:
 
     def vectorElement(self, k):  # gets the vector element <k|MPS>, where 0≤k≤2^size-1
         k_bin = int2list(k, self.__size, self.__physical_dimension)
-        transfer_matrix = identity(self.__bond_dimension)
+        transfer_matrix = np.identity(self.__bond_dimension)
         for site in range(self.__size):
             transfer_matrix = transfer_matrix@self.bondMatrix(
                 site, k_bin[site])
-        return trace(transfer_matrix)
+        return np.trace(transfer_matrix)
 
     def bondMatrix(self, site, index):
-        return array([array([self.__tensors[site][x][y][index] for x in range(self.__bond_dimension)]) for y in range(self.__bond_dimension)])
+        return np.array([np.array([self.__tensors[site][x][y][index] for x in range(self.__bond_dimension)]) for y in range(self.__bond_dimension)])
 
 
 def int2list(n, N, base=2):  # turns an integer into a list of bits
-    return list(map(int, list(base_repr(n, base).zfill(N))))
+    return list(map(int, list(np.base_repr(n, base).zfill(N))))
 
 
 def MPSinnerProduct(x, y):
-    transfer_matrix = sum(kron(x.bondMatrix(0, k), conj(
+    transfer_matrix = sum(np.kron(x.bondMatrix(0, k), np.conj(
         y.bondMatrix(0, k))) for k in range(x.getPhysicalDimension()))
     for site in range(1, x.getSize()):
-        transfer_matrix = transfer_matrix@sum(kron(x.bondMatrix(site, k), conj(
+        transfer_matrix = transfer_matrix@sum(np.kron(x.bondMatrix(site, k), np.conj(
             y.bondMatrix(site, k))) for k in range(x.getPhysicalDimension()))
 
-    return trace(transfer_matrix)
+    return np.trace(transfer_matrix)
 
 
 def MPSouterProduct(x, y):  # compute |x><y| as an MPO
@@ -182,7 +181,7 @@ def MPSouterProduct(x, y):  # compute |x><y| as an MPO
                 for k2 in range(x.getBondDimension()):
                     for j2 in range(y.getBondDimension()):
                         output.setMatrix(i, k1+x.getBondDimension()*j1, k2+x.getBondDimension(
-                        )*j2, kron(x.getTensor(i)[k1][j1], conj(y.getTensor(i)[i][k1][j1])))
+                        )*j2, np.kron(x.getTensor(i)[k1][j1], np.conj(y.getTensor(i)[i][k1][j1])))
     return output
 
 
@@ -228,7 +227,7 @@ def MPStensorProduct(M1, M2):  # computes |M1> \otimes |M2> as an MPS
                 for j2 in range(M1.getBondDimension()):
                     for k2 in range(M2.getBondDimension()):
                         product.setVector(i, j1+M1.getBondDimension()*k1, j2+M1.getBondDimension(
-                        )*k2, kron(M1.getVector(i, j1, j2), conj(M2.getVector(i, k1, k2))))
+                        )*k2, np.kron(M1.getVector(i, j1, j2), np.conj(M2.getVector(i, k1, k2))))
     return product
 
 
