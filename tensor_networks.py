@@ -172,19 +172,6 @@ def MPSinnerProduct(x, y):
     return np.trace(transfer_matrix)
 
 
-def MPSouterProduct(x, y):  # compute |x><y| as an MPO
-    output = MPO(size=x.getSize(), bond_dimension=x.getBondDimension(
-    )*y.getBondDimension(), physical_dimension=x.getPhysicalDimension())
-    for i in range(x.getSize()):
-        for k1 in range(x.getBondDimension()):
-            for j1 in range(y.getBondDimension()):
-                for k2 in range(x.getBondDimension()):
-                    for j2 in range(y.getBondDimension()):
-                        output.setMatrix(i, k1+x.getBondDimension()*j1, k2+x.getBondDimension(
-                        )*j2, np.kron(x.getTensor(i)[k1][j1], np.conj(y.getTensor(i)[i][k1][j1])))
-    return output
-
-
 def MPOtimesMPS(A, x):
     size = A.getSize()
     bond_dimension = A.getBondDimension()*x.getBondDimension()
