@@ -4,14 +4,14 @@ import numpy as np
 
 # MPO CLASS
 
-# an MPO is stored as a list of tensors, the attribute tensors has a np.shape (size, bond_dimension, bond_dimension, physical_dimension, physical_dimension)
+# an MPO is stored as a list of tensors, the attribute tensors has a shape (size, bond_dimension, bond_dimension, physical_dimension, physical_dimension)
 # note that this code only supports MPOs where each tensor has the same bond dimension
 # we call self.__tensors[s][i][j][:][:] the matrix in the site s at indices i,j, and self.__tensors[s][:][:][i][j] the bond matrix at site s and indices i,j
 
-# an MPO is initialized by either giving the tensors, as in MPO(tensors= T), where T is of the np.shape described above,
-# or by giving a size, bond dimension and physical dimension, in which case the tensors are filled with np.zeros.
+# an MPO is initialized by either giving the tensors, as in MPO(tensors= T), where T is of the shape described above,
+# or by giving a size, bond dimension and physical dimension, in which case the tensors are filled with zeros.
 
-# MPS are the same, the tensors are given by a list of np.shape (size, bond_dimension, bond_dimension, physical_dimension),
+# MPS are the same, the tensors are given by a list of shape (size, bond_dimension, bond_dimension, physical_dimension),
 # self.__tensors[s][i][j][:] is called the vector at site s and indices i,j
 
 class MPO:
@@ -46,7 +46,7 @@ class MPO:
     def setMatrix(self, site, i, j, matrix):
         if (np.shape(matrix) != (self.__physical_dimension, self.__physical_dimension)):
             raise ValueError(
-                "The np.shape of this matrix is incompatible with the physical dimension")
+                "The shape of this matrix is incompatible with the physical dimension")
 
         self.__tensors[site][i][j] = matrix
 
@@ -117,12 +117,12 @@ class MPS:
     def setVector(self, site, i, j, vector):
         if (np.shape(vector) != (self.__physical_dimension,)):
             raise ValueError(
-                "The np.shape of this vector is incompatible with the physical dimension")
+                "The shape of this vector is incompatible with the physical dimension")
         self.__tensors[site][i][j] = vector
 
     def setTensor(self, site, tensor):
         if (np.shape(tensor) != (self.__bond_dimension, self.__bond_dimension, self.__physical_dimension)):
-            raise ValueError("Wrong tensor np.shape")
+            raise ValueError("Wrong tensor shape")
         self.__tensors[site] = tensor[:]
 
     def setTensors(self, tensors):
